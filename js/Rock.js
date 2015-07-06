@@ -1,11 +1,13 @@
 var _rock_material = new THREE.MeshLambertMaterial({color: 0x2e2e2e});
-var _rock_geometry = new THREE.BoxGeometry(18, 18, 18);
+var _rock_geometry = new THREE.DodecahedronGeometry(18);
 
 Rock = function () {
 	this.mesh = new THREE.Mesh(_rock_geometry, _rock_material);
 	this.speed = new THREE.Vector3();
 	this.size = 18;
 }
+
+Rock.prototype.constructor = Rock;
 
 Rock.prototype.setGeometry = function(geometry) {
 	this.mesh.geometry = geometry;

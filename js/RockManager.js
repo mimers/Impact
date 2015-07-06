@@ -34,14 +34,15 @@ RockManager.prototype.run = function(now) {
 };
 
 RockManager.prototype.collision = function(earth) {
-	var raycaster = new THREE.Raycaster();
 	var crashRocks = new ArrayList();
 	for (var i = this.rocks.size() - 1; i >= 0; i--) {
 		var rock = this.rocks.get(i);
-		raycaster.set(rock.mesh.position, rock.speed.clone().normalize());
-		var inter = raycaster.intersectObject(earth);
-		if (inter.length > 0 && inter[0].distance < rock.size - 3) {
-			crashRocks.add(rock);
+		if (rock.mesh.position.x - rock.mesh.geometry.boundingSphere.radius 
+				<= earth.position.x + earth.geometry.boundingSphere.radius) {
+			var distance = rock.mesh.position.distanceTo(earth.position);
+			if (distance < earth.geometry.boundingSphere.radius + rock.mesh.geometry.boundingSphere.radius) {
+				crashRocks.add(rock);
+			};
 		};
 	};
 	return crashRocks;
