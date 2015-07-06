@@ -9,11 +9,27 @@
 		border: 0;
 		background: black;
 	}
+	div {
+		position: fixed;
+		top: 0px;
+		color: gold;
+		font-size: 130%;
+		font-family: monospace;
+	}
 	</style>
 </head>
 <body>
+<div>
+Currnet rock count:<span id="rock_count">0</span><br />
+Current missile count:<span id="missile_count">0</span><br />
+Current crash on earth:<span id="crash_earth">0</span>
+</div>
 <script src="js/three.min.js"></script>
 <script src="js/loaders/OBJLoader.js"></script>
+<script src="js/ArrayList.js"></script>
+<script src="js/Rock.js"></script>
+<script src="js/RockManager.js"></script>
+<script src="js/MissileManager.js"></script>
 <script src="js/impact.js"></script>
 </body>
 </html>
