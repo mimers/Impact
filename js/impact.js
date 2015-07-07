@@ -3,7 +3,7 @@ var SCENE_HEIGHT = 280;
 var GlobalScene = new THREE.Scene();
 // var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 // var camera = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, 1, 1000);
-var camera = new THREE.OrthographicCamera(SCENE_WIDHT / -2, SCENE_WIDHT / 2, SCENE_HEIGHT / 2, SCENE_HEIGHT / -2, 1, 1000);
+var camera = new THREE.OrthographicCamera(SCENE_WIDHT / -2, SCENE_WIDHT / 2, SCENE_HEIGHT / 2, SCENE_HEIGHT / -2, 1, 3000);
 var rockCountIndicator = document.getElementById('rock_count');
 var missileCountIndicator = document.getElementById('missile_count');
 var crashEarth = document.getElementById('crash_earth');
@@ -16,7 +16,7 @@ var rendererWidth = window.innerWidth;
 var rendererHeight = SCENE_HEIGHT * SCENE_SCALE;
 renderer.setSize(rendererWidth, rendererHeight);
 document.body.appendChild(renderer.domElement);
-camera.position.z = 500;
+camera.position.z = 1500;
 
 var lights = [];
 lights[0] = new THREE.PointLight(0xffffff, .8, 0);
@@ -57,6 +57,16 @@ GlobalScene.add(satellites[0]);
 GlobalScene.add(satellites[1]);
 GlobalScene.add(satellites[2]);
 
+// var outMap = THREE.ImageUtils.loadTexture("star.jpg");
+// var testGeo = new THREE.PlaneBufferGeometry(220, 110);
+// var testMatrial = new THREE.MeshBasicMaterial({map: outMap});
+// testMatrial.transparent = true;
+// testMatrial.blending = THREE["NnormalBlending"];
+// testMatrial.blendsrc = THREE["SrcAlphaFactor"];
+// testMatrial.blendDst = THREE["SrcColorFactor"];
+// var testMesh = new THREE.Mesh(testGeo, testMatrial);
+// testMesh.position.z = 100;
+// GlobalScene.add(testMesh);
 
 // var bg_plane = new THREE.PlaneGeometry(SCENE_WIDHT, SCENE_HEIGHT);
 // var house_map = new THREE.ImageUtils.loadTexture("house.jpg");
@@ -75,6 +85,20 @@ GlobalScene.add(satellites[2]);
 // 	GlobalScene.add(glyder);
 // })
 
+var starTexture = THREE.ImageUtils.loadTexture("star.jpg");
+var starsGeometry = new THREE.Geometry();
+for (var i = 0; i < 1000; i++) {
+	var v = new THREE.Vector3(
+		Math.random() * 500 - 250,
+		Math.random() * 500 - 250,
+		Math.random() * 500 - 250);
+	starsGeometry.vertices.push(v);
+};
+var starMaterial = new THREE.PointCloudMaterial({size: 50, map: starTexture, blending: THREE.AdditiveBlending, depthTest: true, transparent: true});
+var starParticles = new THREE.PointCloud(starsGeometry, starMaterial);
+starParticles.scale.set(4,4,4);
+GlobalScene.add(starParticles);
+
 
 var lastBornTime = Date.now();
 var BORN_DELAY = 1000;
@@ -82,10 +106,8 @@ var rocksManager = new RockManager();
 var missilesManager = new MissileManager();
 rocksManager.indicator = rockCountIndicator;
 missilesManager.indicator = missileCountIndicator;
-
-var render = function() {
-    requestAnimationFrame(render);
-
+var runScene = function () {
+	
     erarth_mesh.rotation.y += 0.002;
     satellites[0].rotation.x += 0.01;
     satellites[0].rotation.z += 0.01;
@@ -118,6 +140,14 @@ var render = function() {
     	boomedRockCount += boomed.size();
     	boomedIndicator.innerText = ""+boomedRockCount;
     };
+}
+var render = function() {
+    requestAnimationFrame(render);
+    var now = Date.now();
+    starParticles.rotation.y = now * 0.00003;
+    starParticles.rotation.x = now * 0.00001;
+    starParticles.rotation.z = now * 0.00002;
+    runScene();
     renderer.render(GlobalScene, camera);
 };
 
@@ -129,8 +159,8 @@ function TranslateCoordY (y) {
 }
 
 renderer.domElement.addEventListener("click", function (event) {
-	var x = TranslateCoordX(event.x);
-	var y = TranslateCoordY(event.y);
+	var x = TranslateCoordX(event.clientX);
+	var y = TranslateCoordY(event.clientY);
 	var launchPosition = Math.floor((y + SCENE_HEIGHT / 2) / (SCENE_HEIGHT / 3));
 	var from = new THREE.Vector3(satellites[launchPosition].position.x, satellites[launchPosition].position.y, 0);
 	var angle = Math.atan((y - from.y) / (x - from.x));
