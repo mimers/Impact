@@ -1,13 +1,15 @@
 var SCENE_WIDHT = 480;
 var SCENE_HEIGHT = 280;
-var scene = new THREE.Scene();
+var GlobalScene = new THREE.Scene();
 // var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 // var camera = new THREE.OrthographicCamera(window.innerWidth / -2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / -2, 1, 1000);
 var camera = new THREE.OrthographicCamera(SCENE_WIDHT / -2, SCENE_WIDHT / 2, SCENE_HEIGHT / 2, SCENE_HEIGHT / -2, 1, 1000);
 var rockCountIndicator = document.getElementById('rock_count');
 var missileCountIndicator = document.getElementById('missile_count');
 var crashEarth = document.getElementById('crash_earth');
+var boomedIndicator = document.getElementById('boom_count');
 var crashEarthCount = 0;
+var boomedRockCount = 0;
 var renderer = new THREE.WebGLRenderer({antialias: true});
 var SCENE_SCALE = window.innerWidth / SCENE_WIDHT;
 var rendererWidth = window.innerWidth;
@@ -25,10 +27,10 @@ lights[0].position.set(100, 130, 0);
 lights[1].position.set(0, 0, 320);
 lights[2].position.set(-400, -130, 0);
 var light = new THREE.AmbientLight( 0x4f4f4f ); // soft white light
-scene.add( light );
-scene.add(lights[0]);
-scene.add(lights[1]);
-scene.add(lights[2]);
+GlobalScene.add( light );
+GlobalScene.add(lights[0]);
+GlobalScene.add(lights[1]);
+GlobalScene.add(lights[2]);
 
 var EARTH_RADIUS = 130;
 var geo_sphere = new THREE.SphereGeometry(EARTH_RADIUS, 40, 40);
@@ -38,7 +40,7 @@ var erarth_mesh = new THREE.Mesh(geo_sphere, earth_material);
 erarth_mesh.position.x = -200;
 erarth_mesh.position.z = 0;
 erarth_mesh.rotation.y = 2.3;
-scene.add(erarth_mesh);
+GlobalScene.add(erarth_mesh);
 
 var satellites = [];
 var SATELLITE_SIZE = 5;
@@ -51,9 +53,9 @@ satellites[0].position.set(erarth_mesh.position.x + sateRadius * Math.cos(sateSk
 satellites[1].position.set(erarth_mesh.position.x + sateRadius, 0, erarth_mesh.position.z);
 satellites[2].position.set(erarth_mesh.position.x + sateRadius * Math.cos(sateSkewAngle), Math.sin(sateSkewAngle) * sateRadius, erarth_mesh.position.z);
 
-scene.add(satellites[0]);
-scene.add(satellites[1]);
-scene.add(satellites[2]);
+GlobalScene.add(satellites[0]);
+GlobalScene.add(satellites[1]);
+GlobalScene.add(satellites[2]);
 
 
 // var bg_plane = new THREE.PlaneGeometry(SCENE_WIDHT, SCENE_HEIGHT);
@@ -61,7 +63,7 @@ scene.add(satellites[2]);
 // var house_material = new THREE.MeshPhongMaterial({map: house_map, minFilter: THREE.LinearFilter});
 // var bg_mesh = new THREE.Mesh(bg_plane, house_material);
 // bg_mesh.position.z = -70;
-// scene.add(bg_mesh);
+// GlobalScene.add(bg_mesh);
 
 // var glyder;
 // var glyder_map = new THREE.ImageUtils.loadTexture("glyder_map.jpg");
@@ -70,16 +72,16 @@ scene.add(satellites[2]);
 // 	glyder = object;
 // 	glyder.scale.set(0.09, 0.09, 0.09);
 // 	glyder.rotation.set(0, 1.5, 0);
-// 	scene.add(glyder);
+// 	GlobalScene.add(glyder);
 // })
 
 
 var lastBornTime = Date.now();
 var BORN_DELAY = 1000;
-var rocks = new RockManager();
-var missiles = new RockManager();
-rocks.indicator = rockCountIndicator;
-missiles.indicator = missileCountIndicator;
+var rocksManager = new RockManager();
+var missilesManager = new MissileManager();
+rocksManager.indicator = rockCountIndicator;
+missilesManager.indicator = missileCountIndicator;
 
 var render = function() {
     requestAnimationFrame(render);
@@ -99,18 +101,24 @@ var render = function() {
     	newRock.mesh.position.x = SCENE_WIDHT / 2 + 10;
     	newRock.mesh.position.z = 0;
     	newRock.mesh.rotation.x = 2;
-    	rocks.addRock(newRock);
+    	rocksManager.addRock(newRock);
     	lastBornTime = now;
     };
-    rocks.run(now);
-    missiles.run(now);
-    var crashed = rocks.collision(erarth_mesh);
+    rocksManager.run(now);
+    missilesManager.run(now);
+    var crashed = rocksManager.collision(erarth_mesh);
     if (crashed.size() > 0) {
-	    rocks.removeRocks(crashed);
+	    rocksManager.removeRocks(crashed);
 	    crashEarthCount += crashed.size();
     	crashEarth.innerText = ""+crashEarthCount;
     };
-    renderer.render(scene, camera);
+    var boomed = missilesManager.collision(rocksManager.rocks);
+    if (boomed.size() > 0) {
+    	rocksManager.removeRocks(boomed);
+    	boomedRockCount += boomed.size();
+    	boomedIndicator.innerText = ""+boomedRockCount;
+    };
+    renderer.render(GlobalScene, camera);
 };
 
 function TranslateCoordX (x) {
@@ -121,15 +129,16 @@ function TranslateCoordY (y) {
 }
 
 renderer.domElement.addEventListener("click", function (event) {
-	var newMissile = new Rock();
 	var x = TranslateCoordX(event.x);
 	var y = TranslateCoordY(event.y);
 	var launchPosition = Math.floor((y + SCENE_HEIGHT / 2) / (SCENE_HEIGHT / 3));
-	newMissile.mesh.position.set(satellites[launchPosition].position.x, satellites[launchPosition].position.y, 0);
-	var angle = Math.atan((y - newMissile.mesh.position.y) / (x - newMissile.mesh.position.x));
+	var from = new THREE.Vector3(satellites[launchPosition].position.x, satellites[launchPosition].position.y, 0);
+	var angle = Math.atan((y - from.y) / (x - from.x));
 	var speed = 0.1;
-	newMissile.speed.set(speed * Math.cos(angle), speed * Math.sin(angle), 0);
-	missiles.addRock(newMissile);
+	var newMissile = new Missile(from,
+		new THREE.Vector3(speed * Math.cos(angle), speed * Math.sin(angle), 0),
+		new THREE.Vector3(x, y, 0));
+	missilesManager.addMissile(newMissile);
 })
 
 render();

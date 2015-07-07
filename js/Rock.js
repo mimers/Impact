@@ -27,6 +27,12 @@ Rock.prototype.run = function(now) {
 		this.mesh.position.add(step);
 		this.mesh.rotation.x += step.x * 0.1;
 		this.mesh.rotation.z += step.x * 0.07;
+		if ((this.speed.x >= 0 && this.mesh.position.x > SCENE_WIDHT / 2)
+			|| (this.speed.x <= 0 && this.mesh.position.x < -SCENE_WIDHT / 2)
+			|| (this.speed.y >= 0 && this.mesh.position.y > SCENE_HEIGHT / 2)
+			|| (this.speed.y <= 0 && this.mesh.position.y < -SCENE_HEIGHT / 2)) {
+			this.dead = true;
+		};
 	};
 	this.lastRunTime = now;
 };
