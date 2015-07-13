@@ -57,34 +57,6 @@ GlobalScene.add(satellites[0]);
 GlobalScene.add(satellites[1]);
 GlobalScene.add(satellites[2]);
 
-// var outMap = THREE.ImageUtils.loadTexture("star.jpg");
-// var testGeo = new THREE.PlaneBufferGeometry(220, 110);
-// var testMatrial = new THREE.MeshBasicMaterial({map: outMap});
-// testMatrial.transparent = true;
-// testMatrial.blending = THREE["NnormalBlending"];
-// testMatrial.blendsrc = THREE["SrcAlphaFactor"];
-// testMatrial.blendDst = THREE["SrcColorFactor"];
-// var testMesh = new THREE.Mesh(testGeo, testMatrial);
-// testMesh.position.z = 100;
-// GlobalScene.add(testMesh);
-
-// var bg_plane = new THREE.PlaneGeometry(SCENE_WIDHT, SCENE_HEIGHT);
-// var house_map = new THREE.ImageUtils.loadTexture("house.jpg");
-// var house_material = new THREE.MeshPhongMaterial({map: house_map, minFilter: THREE.LinearFilter});
-// var bg_mesh = new THREE.Mesh(bg_plane, house_material);
-// bg_mesh.position.z = -70;
-// GlobalScene.add(bg_mesh);
-
-// var glyder;
-// var glyder_map = new THREE.ImageUtils.loadTexture("glyder_map.jpg");
-// var loader = new THREE.OBJLoader();
-// loader.load("glyder.obj", function (object) {
-// 	glyder = object;
-// 	glyder.scale.set(0.09, 0.09, 0.09);
-// 	glyder.rotation.set(0, 1.5, 0);
-// 	GlobalScene.add(glyder);
-// })
-
 var starTexture = THREE.ImageUtils.loadTexture("star.jpg");
 var starsGeometry = new THREE.Geometry();
 for (var i = 0; i < 1000; i++) {
@@ -141,13 +113,56 @@ var runScene = function () {
     	boomedIndicator.innerText = ""+boomedRockCount;
     };
 }
+
+var lastFrame = 0;
+var addFactor = {x: 1 / 8, y: 0};
+var FRAME_DURATION = 280;
+var lastFrameTime = 0;
+
+function TranslateUV (geometry, v) {
+    for (var i = geometry.faceVertexUvs[0].length - 1; i >= 0; i--) {
+        for (var j = geometry.faceVertexUvs[0][i].length - 1; j >= 0; j--) {
+            geometry.faceVertexUvs[0][i][j].add(v);
+        };
+    };
+    geometry.uvsNeedUpdate = true;
+}
+
+var fireMap = THREE.ImageUtils.loadTexture("ar.png");
+var fireRadius = 10;
+var fireGroup = new THREE.Group();
+var firematerial = new THREE.MeshBasicMaterial({map: fireMap, blending: THREE.AdditiveBlending, depthTest: false, transparent: true});
+var stepAngle = Math.PI / 6;
+var startAngle = 0;
+var maxAngle = Math.PI * 50;
+fireGroup.rotation.x = Math.PI / 3;
+fireGroup.position.z = -100;
+GlobalScene.add(fireGroup);
+
+GlobalScene.add(new THREE.AxisHelper(100));
+
 var render = function() {
     requestAnimationFrame(render);
     var now = Date.now();
     starParticles.rotation.y = now * 0.00003;
     starParticles.rotation.x = now * 0.00001;
     starParticles.rotation.z = now * 0.00002;
-    runScene();
+    fireGroup.rotation.z = now * 0.00006;
+    if (startAngle < maxAngle) {
+        var v = new THREE.Vector3(fireRadius * Math.sin(startAngle),
+         fireRadius * Math.cos(startAngle), 
+         startAngle * .2352);
+        var s = new THREE.PlaneBufferGeometry(fireRadius, fireRadius, 1, 1);
+        var m = new THREE.Mesh(s, firematerial);
+        m.rotation.z = - startAngle + Math.PI + Math.PI;
+        m.position.copy(v);
+        m.position.z = -200;
+        fireGroup.add(m);
+        fireRadius *= 1.008951;
+        stepAngle *= 0.99981;
+        startAngle += stepAngle;
+    };
+    // runScene();
     renderer.render(GlobalScene, camera);
 };
 
@@ -172,3 +187,4 @@ renderer.domElement.addEventListener("click", function (event) {
 })
 
 render();
+// setInterval(render, 18);
