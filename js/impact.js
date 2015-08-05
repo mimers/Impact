@@ -78,6 +78,7 @@ var rocksManager = new RockManager();
 var missilesManager = new MissileManager();
 rocksManager.indicator = rockCountIndicator;
 missilesManager.indicator = missileCountIndicator;
+var charsToDestroy = [];
 var runScene = function () {
 	
     erarth_mesh.rotation.y += 0.002;
@@ -90,11 +91,11 @@ var runScene = function () {
     var now = Date.now();
     if (now - lastBornTime > BORN_DELAY) {
     	var newRock = new Rock();
-    	newRock.speed.set(-0.06 * (0.2 + Math.random()), 0.014 * (Math.random() - 0.5), 0);
+    	newRock.speed.set(-0.02 * (0.6 + Math.random()), 0.0014 * (Math.random() - 0.5), 0);
     	newRock.mesh.position.y = (Math.random() - 0.5) * SCENE_HEIGHT * 0.8;
     	newRock.mesh.position.x = SCENE_WIDHT / 2 + 10;
     	newRock.mesh.position.z = 0;
-    	newRock.mesh.rotation.x = 2;
+    	// newRock.mesh.rotation.x = 2;
     	rocksManager.addRock(newRock);
     	lastBornTime = now;
     };
@@ -162,7 +163,7 @@ var render = function() {
         stepAngle *= 0.99981;
         startAngle += stepAngle;
     };
-    // runScene();
+    runScene();
     renderer.render(GlobalScene, camera);
 };
 
@@ -171,6 +172,18 @@ function TranslateCoordX (x) {
 }
 function TranslateCoordY (y) {
 	return -(y - rendererHeight / 2) / SCENE_SCALE;
+}
+function playSound (src) {
+	var boom = document.createElement('audio');
+	boom.src = src;
+	boom.volume = 0.5;
+	boom.play();
+}
+function playBoom () {
+	playSound('boom.ogg');
+}
+function playMiss () {
+	playSound('miss.ogg');
 }
 
 renderer.domElement.addEventListener("click", function (event) {
@@ -184,6 +197,17 @@ renderer.domElement.addEventListener("click", function (event) {
 		new THREE.Vector3(speed * Math.cos(angle), speed * Math.sin(angle), 0),
 		new THREE.Vector3(x, y, 0));
 	missilesManager.addMissile(newMissile);
+})
+
+document.addEventListener("keydown", function (event) {
+	var char = event.keyCode - 65;
+	if (char >= 0 && char <= 25) {
+		if(rocksManager.removeChar(char)) {
+			playBoom();
+		} else {
+			playMiss();
+		}
+	};
 })
 
 render();

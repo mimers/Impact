@@ -49,3 +49,13 @@ RockManager.prototype.removeRocks = function(rocks) {
 		this.removeRock(rocks.get(i));
 	};
 };
+
+RockManager.prototype.removeChar = function(char) {
+	for (var i = this.rocks.size() - 1; i >= 0; i--) {
+		if (this.rocks.get(i).char == char) {
+			this.removeRock(this.rocks.get(i));
+			return true;
+		}
+	}
+	return false;
+};
